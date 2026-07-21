@@ -3,33 +3,587 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terrain Trees</title>
+  <title>Bluey Model Viewer</title>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, sans-serif;
-      background: #0f1a14;
-      color: #e6f2ea;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0f0;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
     }
-    .card {
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: #16213e;
+      border-right: 1px solid #0f3460;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #sidebar-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #0f3460;
+      flex-shrink: 0;
+    }
+
+    #sidebar-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e94560;
+      letter-spacing: .5px;
+    }
+
+    #sidebar-header p {
+      font-size: .72rem;
+      color: #8888aa;
+      margin-top: 2px;
+    }
+
+    #model-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .folder-group { margin-bottom: 4px; }
+
+    .folder-label {
+      padding: 6px 16px 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #e94560;
+    }
+
+    .model-btn {
+      display: block;
+      width: 100%;
+      padding: 7px 20px 7px 24px;
+      background: none;
+      border: none;
+      color: #c0c0dc;
+      font-size: .82rem;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background .12s, color .12s;
+    }
+    .model-btn:hover { background: #1f3060; color: #fff; }
+    .model-btn.active { background: #0f3460; color: #e94560; font-weight: 600; }
+
+    #no-models {
+      padding: 20px 16px;
+      font-size: .82rem;
+      color: #8888aa;
+      line-height: 1.6;
+    }
+    #no-models code {
+      background: #0f3460;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: .78rem;
+      display: block;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    /* ── Viewport ── */
+    #viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas { display: block; }
+
+    /* ── Overlay UI ── */
+    #status {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(22, 33, 62, .85);
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: .8rem;
+      color: #c0c0dc;
+      pointer-events: none;
+      white-space: nowrap;
+      display: none;
+    }
+
+    #controls-panel {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(22, 33, 62, .9);
+      border: 1px solid #0f3460;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 200px;
+    }
+
+    #controls-panel h3 {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #e94560;
+      margin-bottom: 2px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .78rem;
+    }
+
+    .control-row label {
+      width: 80px;
+      color: #9999bb;
+      flex-shrink: 0;
+    }
+
+    .control-row select,
+    .control-row input[type=range] {
+      flex: 1;
+    }
+
+    select {
+      background: #0f3460;
+      color: #e0e0f0;
+      border: 1px solid #1a4080;
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: .78rem;
+    }
+
+    input[type=range] { cursor: pointer; accent-color: #e94560; }
+
+    .btn {
+      background: #0f3460;
+      border: 1px solid #1a4080;
+      border-radius: 5px;
+      color: #e0e0f0;
+      font-size: .78rem;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .btn:hover { background: #e94560; border-color: #e94560; }
+
+    #anim-controls { display: none; }
+
+    /* ── Drag hint ── */
+    #drag-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
-      padding: 2rem 3rem;
-      border: 1px solid #24503a;
-      border-radius: 12px;
-      background: #142a1f;
+      pointer-events: none;
+      color: #44446a;
     }
-    h1 { margin: 0 0 .5rem; }
-    code { background: #0b1710; padding: .15em .4em; border-radius: 4px; }
+    #drag-hint .big { font-size: 3rem; }
+    #drag-hint p { font-size: .88rem; margin-top: 8px; }
+    #drag-hint.hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🌲 Terrain Trees</h1>
-    <p>Live-reload server is running.</p>
-    <p>Edit <code>public/index.html</code> and this page refreshes on save.</p>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <h1>🐕 Bluey Viewer</h1>
+    <p>Rigged character models</p>
   </div>
+  <div id="model-list">
+    <div id="no-models">
+      Loading models…
+    </div>
+  </div>
+</nav>
+
+<!-- 3-D Viewport -->
+<div id="viewport">
+  <div id="canvas-container"></div>
+
+  <div id="status"></div>
+
+  <div id="drag-hint">
+    <div class="big">🐕</div>
+    <p>Select a character from the sidebar</p>
+  </div>
+
+  <div id="controls-panel">
+    <h3>Controls</h3>
+    <div class="control-row">
+      <label>Mouse</label>
+      <span style="color:#8888aa;font-size:.75rem">Drag · Scroll · RMB pan</span>
+    </div>
+
+    <div id="anim-controls">
+      <div class="control-row" style="margin-top:4px">
+        <label>Animation</label>
+        <select id="anim-select"></select>
+      </div>
+      <div class="control-row">
+        <label>Speed</label>
+        <input type="range" id="speed-range" min="0.1" max="3" step="0.05" value="1" />
+      </div>
+      <div class="control-row" style="gap:6px">
+        <button class="btn" id="btn-play">▶ Play</button>
+        <button class="btn" id="btn-pause">⏸ Pause</button>
+        <button class="btn" id="btn-reset">↩ Reset</button>
+      </div>
+    </div>
+
+    <div class="control-row" style="margin-top:4px">
+      <label>Scale</label>
+      <input type="range" id="scale-range" min="-3" max="3" step="0.01" value="0" />
+    </div>
+    <div class="control-row">
+      <label>BG Color</label>
+      <input type="color" id="bg-color" value="#1a1a2e" style="cursor:pointer;border:none;background:none;width:32px;height:24px" />
+    </div>
+  </div>
+</div>
+
+<!-- Three.js r158 via CDN (ESM) -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+// ── Scene setup ─────────────────────────────────────────────────────────────
+
+const container = document.getElementById('canvas-container');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#1a1a2e');
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+camera.position.set(0, 1.5, 4);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 0.8, 0);
+controls.update();
+
+// Lights
+const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+dirLight.position.set(3, 6, 4);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0xb0c8ff, 0.8);
+fillLight.position.set(-4, 2, -3);
+scene.add(fillLight);
+
+// Ground grid
+const grid = new THREE.GridHelper(10, 20, 0x303060, 0x222244);
+scene.add(grid);
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+
+function resize() {
+  const w = container.clientWidth, h = container.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(container);
+resize();
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+
+let mixer = null;
+let clock  = new THREE.Clock();
+let currentAction = null;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  if (mixer) mixer.update(delta);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// ── Model loading ─────────────────────────────────────────────────────────────
+
+let currentModel = null;
+
+const gltfLoader = new GLTFLoader();
+const fbxLoader  = new FBXLoader();
+
+const statusEl    = document.getElementById('status');
+const dragHint    = document.getElementById('drag-hint');
+const animSel     = document.getElementById('anim-select');
+const animControls = document.getElementById('anim-controls');
+const speedRange  = document.getElementById('speed-range');
+const scaleRange  = document.getElementById('scale-range');
+
+function showStatus(msg) {
+  statusEl.textContent = msg;
+  statusEl.style.display = 'block';
+}
+function hideStatus() { statusEl.style.display = 'none'; }
+
+function clearScene() {
+  if (currentModel) {
+    scene.remove(currentModel);
+    currentModel.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        [].concat(o.material).forEach(m => m.dispose());
+      }
+    });
+    currentModel = null;
+  }
+  if (mixer) { mixer.stopAllAction(); mixer = null; }
+  currentAction = null;
+  animSel.innerHTML = '';
+  animControls.style.display = 'none';
+}
+
+function fitCamera(object) {
+  const box  = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  // Move model so feet are at y=0
+  object.position.y -= box.min.y;
+  center.y -= box.min.y;
+
+  const fov = camera.fov * (Math.PI / 180);
+  let dist  = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+  dist = Math.max(dist, 0.5);
+
+  camera.position.set(center.x, center.y + size.y * 0.4, center.z + dist);
+  controls.target.copy(new THREE.Vector3(center.x, center.y + size.y * 0.3, center.z));
+  controls.update();
+}
+
+function playAnimation(index) {
+  if (!mixer) return;
+  if (currentAction) currentAction.stop();
+  const clips = mixer._actions.length ? mixer._root.animations : [];
+  // animations are stored on the root object
+  const clip = mixer._root.animations[index];
+  if (!clip) return;
+  currentAction = mixer.clipAction(clip);
+  currentAction.timeScale = parseFloat(speedRange.value);
+  currentAction.play();
+}
+
+function loadAnimations(animations, object) {
+  mixer = new THREE.AnimationMixer(object);
+  object.animations = animations;
+
+  animSel.innerHTML = '';
+  animations.forEach((clip, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = clip.name || `Clip ${i + 1}`;
+    animSel.appendChild(opt);
+  });
+
+  animControls.style.display = animations.length ? 'block' : 'none';
+  if (animations.length) playAnimation(0);
+}
+
+function onModelLoaded(object, animations = []) {
+  clearScene();
+
+  // Ensure correct color space on all textures
+  object.traverse(child => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      const mats = [].concat(child.material);
+      mats.forEach(m => {
+        if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+        if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+      });
+    }
+  });
+
+  scaleRange.value = 0;
+  fitCamera(object);
+
+  scene.add(object);
+  currentModel = object;
+
+  loadAnimations(animations, object);
+  dragHint.classList.add('hidden');
+  hideStatus();
+}
+
+function loadModel(urlPath, name) {
+  showStatus(`Loading ${name}…`);
+  const ext = name.split('.').pop().toLowerCase();
+
+  if (ext === 'glb' || ext === 'gltf') {
+    gltfLoader.load(
+      urlPath,
+      gltf => onModelLoaded(gltf.scene, gltf.animations),
+      xhr => {
+        if (xhr.total) showStatus(`Loading ${name} — ${Math.round(xhr.loaded / xhr.total * 100)}%`);
+      },
+      err => { hideStatus(); alert(`Failed to load ${name}:\n${err.message}`); }
+    );
+  } else if (ext === 'fbx') {
+    fbxLoader.load(
+      urlPath,
+      fbx => onModelLoaded(fbx, fbx.animations || []),
+      xhr => {
+        if (xhr.total) showStatus(`Loading ${name} — ${Math.round(xhr.loaded / xhr.total * 100)}%`);
+      },
+      err => { hideStatus(); alert(`Failed to load ${name}:\n${err.message}`); }
+    );
+  } else {
+    hideStatus();
+    alert(`Unsupported format: .${ext}`);
+  }
+}
+
+// ── Sidebar population ────────────────────────────────────────────────────────
+
+async function loadModelList() {
+  const listEl = document.getElementById('model-list');
+
+  let data;
+  try {
+    const res = await fetch('/api/models');
+    data = await res.json();
+  } catch (e) {
+    listEl.innerHTML = `<div id="no-models">
+      Could not reach server API.<br/>Make sure server.js is running.
+    </div>`;
+    return;
+  }
+
+  if (!data.modelsDir || data.folders.length === 0) {
+    listEl.innerHTML = `<div id="no-models">
+      No models found.<br/><br/>
+      Create <b>models.config.json</b> in the project root:<br/>
+      <code>{ "modelsDir": "C:\\\\Users\\\\macie\\\\OneDrive\\\\Desktop\\\\BLUEY ANIMATED\\\\MODELS\\\\Bluey World" }</code>
+      <br/><br/>Or run:<br/>
+      <code>node server.js --models "C:\\Users\\macie\\..."</code>
+    </div>`;
+    return;
+  }
+
+  listEl.innerHTML = '';
+  for (const folder of data.folders) {
+    const group = document.createElement('div');
+    group.className = 'folder-group';
+
+    const label = document.createElement('div');
+    label.className = 'folder-label';
+    label.textContent = folder.name;
+    group.appendChild(label);
+
+    for (const model of folder.models) {
+      const btn = document.createElement('button');
+      btn.className = 'model-btn';
+      btn.textContent = model.name;
+      btn.title = model.relativePath;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadModel('/models/' + encodeURIComponent(model.relativePath).replace(/%5C/g, '/').replace(/%2F/g, '/'), model.name);
+      });
+      group.appendChild(btn);
+    }
+    listEl.appendChild(group);
+  }
+}
+
+loadModelList();
+
+// ── Control panel events ──────────────────────────────────────────────────────
+
+animSel.addEventListener('change', () => playAnimation(parseInt(animSel.value)));
+
+speedRange.addEventListener('input', () => {
+  if (currentAction) currentAction.timeScale = parseFloat(speedRange.value);
+});
+
+document.getElementById('btn-play').addEventListener('click', () => {
+  if (currentAction) currentAction.play();
+});
+document.getElementById('btn-pause').addEventListener('click', () => {
+  if (currentAction) currentAction.paused = !currentAction.paused;
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (currentAction) { currentAction.reset(); currentAction.play(); }
+});
+
+scaleRange.addEventListener('input', () => {
+  if (!currentModel) return;
+  const s = Math.pow(10, parseFloat(scaleRange.value) * 0.5);
+  currentModel.scale.setScalar(s);
+});
+
+document.getElementById('bg-color').addEventListener('input', e => {
+  scene.background = new THREE.Color(e.target.value);
+});
+
+// ── Drag-and-drop local files ─────────────────────────────────────────────────
+
+const viewport = document.getElementById('viewport');
+viewport.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+viewport.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  loadModel(url, file.name);
+});
+</script>
 </body>
 </html>
