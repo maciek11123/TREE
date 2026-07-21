@@ -18,8 +18,8 @@
 
     /* ── Sidebar ── */
     #sidebar {
-      width: 260px;
-      min-width: 260px;
+      width: 270px;
+      min-width: 270px;
       background: #16213e;
       border-right: 1px solid #0f3460;
       display: flex;
@@ -32,41 +32,61 @@
       border-bottom: 1px solid #0f3460;
       flex-shrink: 0;
     }
+    #sidebar-header h1 { font-size: 1.1rem; font-weight: 700; color: #e94560; letter-spacing: .5px; }
+    #sidebar-header p  { font-size: .72rem; color: #8888aa; margin-top: 2px; }
 
-    #sidebar-header h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #e94560;
-      letter-spacing: .5px;
+    /* Batch / Audit toolbar */
+    #batch-toolbar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #0f3460;
+      flex-shrink: 0;
     }
-
-    #sidebar-header p {
-      font-size: .72rem;
-      color: #8888aa;
-      margin-top: 2px;
-    }
-
-    #model-list {
+    #batch-toolbar .tbtn {
       flex: 1;
-      overflow-y: auto;
-      padding: 8px 0;
+      background: #0f3460;
+      border: 1px solid #1a4080;
+      border-radius: 5px;
+      color: #c0c0dc;
+      font-size: .72rem;
+      padding: 5px 6px;
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      white-space: nowrap;
     }
+    #batch-toolbar .tbtn:hover { background: #e94560; border-color: #e94560; color: #fff; }
+    #batch-toolbar .tbtn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+    #batch-toolbar .tbtn.active-mode { background: #e94560; border-color: #e94560; color: #fff; }
+
+    #model-list { flex: 1; overflow-y: auto; padding: 8px 0; }
 
     .folder-group { margin-bottom: 4px; }
-
     .folder-label {
       padding: 6px 16px 4px;
-      font-size: .68rem;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
+      font-size: .68rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
       color: #e94560;
     }
 
+    .model-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .model-check {
+      display: none;
+      margin: 0 6px 0 14px;
+      accent-color: #e94560;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .audit-mode .model-check { display: block; }
+
     .model-btn {
+      flex: 1;
       display: block;
-      width: 100%;
-      padding: 7px 20px 7px 24px;
+      padding: 7px 20px 7px 14px;
       background: none;
       border: none;
       color: #c0c0dc;
@@ -81,6 +101,22 @@
     .model-btn:hover { background: #1f3060; color: #fff; }
     .model-btn.active { background: #0f3460; color: #e94560; font-weight: 600; }
 
+    /* fix-propagation badge */
+    .model-btn.has-fix::after {
+      content: '✓';
+      float: right;
+      color: #4caf50;
+      font-size: .7rem;
+      margin-right: 4px;
+    }
+    .model-btn.similar-fix::after {
+      content: '≈';
+      float: right;
+      color: #ffb74d;
+      font-size: .7rem;
+      margin-right: 4px;
+    }
+
     #no-models {
       padding: 20px 16px;
       font-size: .82rem;
@@ -89,124 +125,153 @@
     }
     #no-models code {
       background: #0f3460;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: .78rem;
-      display: block;
-      margin-top: 6px;
-      word-break: break-all;
+      padding: 2px 6px; border-radius: 4px;
+      font-size: .78rem; display: block;
+      margin-top: 6px; word-break: break-all;
     }
+
+    /* Audit footer inside sidebar */
+    #audit-footer {
+      display: none;
+      padding: 10px 12px;
+      border-top: 1px solid #0f3460;
+      flex-shrink: 0;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #audit-footer.visible { display: flex; }
+    #audit-footer span { font-size: .75rem; color: #8888aa; }
+    #audit-footer .btn { width: 100%; }
 
     /* ── Viewport ── */
-    #viewport {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #canvas-container {
-      width: 100%;
-      height: 100%;
-    }
-
+    #viewport { flex: 1; position: relative; overflow: hidden; }
+    #canvas-container { width: 100%; height: 100%; }
     canvas { display: block; }
 
-    /* ── Overlay UI ── */
+    /* ── Status bar ── */
     #status {
       position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(22, 33, 62, .85);
+      top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(22, 33, 62, .88);
       border: 1px solid #0f3460;
       border-radius: 8px;
       padding: 6px 16px;
-      font-size: .8rem;
-      color: #c0c0dc;
+      font-size: .8rem; color: #c0c0dc;
       pointer-events: none;
       white-space: nowrap;
       display: none;
     }
 
+    /* ── Similarity toast ── */
+    #propagation-toast {
+      position: absolute;
+      top: 52px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 52, 96, .95);
+      border: 1px solid #e94560;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: .78rem; color: #e0e0f0;
+      pointer-events: none;
+      display: none;
+      text-align: center;
+      max-width: 340px;
+    }
+
+    /* ── Controls panel ── */
     #controls-panel {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
-      background: rgba(22, 33, 62, .9);
+      bottom: 12px; right: 12px;
+      background: rgba(22, 33, 62, .92);
       border: 1px solid #0f3460;
       border-radius: 10px;
       padding: 10px 14px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      min-width: 200px;
+      min-width: 210px;
     }
-
     #controls-panel h3 {
-      font-size: .72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #e94560;
-      margin-bottom: 2px;
+      font-size: .72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: #e94560; margin-bottom: 2px;
     }
-
     .control-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: .78rem;
+      display: flex; align-items: center;
+      gap: 8px; font-size: .78rem;
     }
-
-    .control-row label {
-      width: 80px;
-      color: #9999bb;
-      flex-shrink: 0;
-    }
-
+    .control-row label { width: 80px; color: #9999bb; flex-shrink: 0; }
     .control-row select,
-    .control-row input[type=range] {
-      flex: 1;
-    }
-
+    .control-row input[type=range] { flex: 1; }
     select {
-      background: #0f3460;
-      color: #e0e0f0;
-      border: 1px solid #1a4080;
-      border-radius: 4px;
-      padding: 2px 4px;
-      font-size: .78rem;
+      background: #0f3460; color: #e0e0f0;
+      border: 1px solid #1a4080; border-radius: 4px;
+      padding: 2px 4px; font-size: .78rem;
     }
-
     input[type=range] { cursor: pointer; accent-color: #e94560; }
-
     .btn {
       background: #0f3460;
       border: 1px solid #1a4080;
-      border-radius: 5px;
-      color: #e0e0f0;
-      font-size: .78rem;
-      padding: 4px 10px;
-      cursor: pointer;
-      transition: background .12s;
+      border-radius: 5px; color: #e0e0f0;
+      font-size: .78rem; padding: 4px 10px;
+      cursor: pointer; transition: background .12s;
     }
     .btn:hover { background: #e94560; border-color: #e94560; }
+
+    /* Clipping fix section */
+    #clip-section {
+      border-top: 1px solid #1a3060;
+      padding-top: 8px;
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #clip-section h3 { color: #ffb74d; }
+    #propagate-info {
+      font-size: .72rem; color: #8888aa;
+      display: none;
+    }
 
     #anim-controls { display: none; }
 
     /* ── Drag hint ── */
     #drag-hint {
-      position: absolute;
-      top: 50%;
-      left: 50%;
+      position: absolute; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
-      pointer-events: none;
+      text-align: center; pointer-events: none;
       color: #44446a;
     }
     #drag-hint .big { font-size: 3rem; }
     #drag-hint p { font-size: .88rem; margin-top: 8px; }
     #drag-hint.hidden { display: none; }
+
+    /* ── Batch progress overlay ── */
+    #batch-overlay {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(10, 10, 24, .82);
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; z-index: 10;
+    }
+    #batch-overlay.visible { display: flex; }
+    #batch-overlay h2 { font-size: 1rem; color: #e0e0f0; }
+    #batch-progress-bar {
+      width: 300px; height: 8px;
+      background: #0f3460; border-radius: 4px; overflow: hidden;
+    }
+    #batch-progress-fill {
+      height: 100%; background: #e94560;
+      border-radius: 4px; width: 0;
+      transition: width .25s;
+    }
+    #batch-label { font-size: .8rem; color: #8888aa; }
+    #batch-cancel {
+      background: #0f3460; border: 1px solid #e94560;
+      border-radius: 5px; color: #e94560;
+      font-size: .8rem; padding: 5px 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -217,10 +282,25 @@
     <h1>🐕 Bluey Viewer</h1>
     <p>Rigged character models</p>
   </div>
+
+  <div id="batch-toolbar">
+    <button class="tbtn" id="btn-batch">⚡ Batch Fix All</button>
+    <button class="tbtn" id="btn-audit-mode">🔍 Re-audit</button>
+  </div>
+
   <div id="model-list">
-    <div id="no-models">
-      Loading models…
-    </div>
+    <div id="no-models">Loading models…</div>
+  </div>
+
+  <div id="audit-footer">
+    <span id="audit-count">No models selected</span>
+    <textarea id="audit-comment"
+      placeholder="Describe what's wrong, e.g.:&#10;• feet sink into ground&#10;• model too large&#10;• left arm clips through body"
+      style="width:100%;height:72px;background:#0f3460;border:1px solid #1a4080;border-radius:5px;
+             color:#e0e0f0;font-size:.75rem;padding:6px 8px;resize:none;font-family:inherit;line-height:1.4"
+    ></textarea>
+    <button class="btn" id="btn-run-audit">▶ Run Secondary Audit</button>
+    <button class="btn" id="btn-cancel-audit" style="background:#1a1a3e">✕ Cancel</button>
   </div>
 </nav>
 
@@ -230,9 +310,19 @@
 
   <div id="status"></div>
 
+  <div id="propagation-toast"></div>
+
   <div id="drag-hint">
     <div class="big">🐕</div>
     <p>Select a character from the sidebar</p>
+  </div>
+
+  <!-- Batch progress -->
+  <div id="batch-overlay">
+    <h2 id="batch-overlay-title">Batch processing…</h2>
+    <div id="batch-progress-bar"><div id="batch-progress-fill"></div></div>
+    <div id="batch-label">—</div>
+    <button id="batch-cancel">Cancel</button>
   </div>
 
   <div id="controls-panel">
@@ -258,18 +348,33 @@
       </div>
     </div>
 
-    <div class="control-row" style="margin-top:4px">
-      <label>Scale</label>
-      <input type="range" id="scale-range" min="-3" max="3" step="0.01" value="0" />
+    <!-- Clipping fix -->
+    <div id="clip-section">
+      <h3>Clipping Fix</h3>
+      <div class="control-row">
+        <label>Y Offset</label>
+        <input type="range" id="yoffset-range" min="-2" max="2" step="0.001" value="0" />
+        <span id="yoffset-val" style="color:#ffb74d;min-width:38px;text-align:right;font-size:.75rem">0.000</span>
+      </div>
+      <div class="control-row">
+        <label>Scale</label>
+        <input type="range" id="scale-range" min="-3" max="3" step="0.01" value="0" />
+      </div>
+      <div class="control-row" style="gap:6px">
+        <button class="btn" id="btn-save-fix">💾 Save Fix</button>
+        <button class="btn" id="btn-clear-fix" style="background:#1a1a3e">✕ Clear</button>
+      </div>
+      <div id="propagate-info"></div>
     </div>
-    <div class="control-row">
+
+    <div class="control-row" style="margin-top:2px">
       <label>BG Color</label>
-      <input type="color" id="bg-color" value="#1a1a2e" style="cursor:pointer;border:none;background:none;width:32px;height:24px" />
+      <input type="color" id="bg-color" value="#1a1a2e"
+             style="cursor:pointer;border:none;background:none;width:32px;height:24px" />
     </div>
   </div>
 </div>
 
-<!-- Three.js r158 via CDN (ESM) -->
 <script type="importmap">
 {
   "imports": {
@@ -282,48 +387,43 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader }     from 'three/addons/loaders/FBXLoader.js';
 
-// ── Scene setup ─────────────────────────────────────────────────────────────
+// ── Scene ────────────────────────────────────────────────────────────────────
 
 const container = document.getElementById('canvas-container');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer  = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(devicePixelRatio);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace  = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
-const scene = new THREE.Scene();
+const scene  = new THREE.Scene();
 scene.background = new THREE.Color('#1a1a2e');
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
 camera.position.set(0, 1.5, 4);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
+controls.enableDamping  = true;
+controls.dampingFactor  = 0.08;
 controls.target.set(0, 0.8, 0);
 controls.update();
 
 // Lights
-const ambient = new THREE.AmbientLight(0xffffff, 1.2);
-scene.add(ambient);
-
+scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
 dirLight.position.set(3, 6, 4);
 dirLight.castShadow = true;
 dirLight.shadow.mapSize.set(2048, 2048);
 scene.add(dirLight);
-
 const fillLight = new THREE.DirectionalLight(0xb0c8ff, 0.8);
 fillLight.position.set(-4, 2, -3);
 scene.add(fillLight);
 
-// Ground grid
-const grid = new THREE.GridHelper(10, 20, 0x303060, 0x222244);
-scene.add(grid);
+scene.add(new THREE.GridHelper(10, 20, 0x303060, 0x222244));
 
 // ── Resize ───────────────────────────────────────────────────────────────────
 
@@ -336,188 +436,314 @@ function resize() {
 new ResizeObserver(resize).observe(container);
 resize();
 
-// ── Animation loop ────────────────────────────────────────────────────────────
+// ── Render loop ───────────────────────────────────────────────────────────────
 
-let mixer = null;
-let clock  = new THREE.Clock();
-let currentAction = null;
+let mixer = null, currentAction = null;
+const clock = new THREE.Clock();
 
-function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  if (mixer) mixer.update(delta);
+(function loop() {
+  requestAnimationFrame(loop);
+  if (mixer) mixer.update(clock.getDelta());
   controls.update();
   renderer.render(scene, camera);
+})();
+
+// ── Fix store (persisted to localStorage) ────────────────────────────────────
+// Key: model relativePath  →  { yOffset, scale, bbox: {w,h,d} }
+
+const STORE_KEY = 'bluey_fixes_v1';
+
+function loadStore() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
+  catch { return {}; }
 }
-animate();
+function saveStore(store) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(store));
+}
 
-// ── Model loading ─────────────────────────────────────────────────────────────
+let fixStore = loadStore();   // mutable, saved on each fix
 
-let currentModel = null;
+// ── Shape similarity ──────────────────────────────────────────────────────────
+// Two models are "similar" if their normalised bbox ratios are close.
+
+const SIM_THRESHOLD = 0.18;   // max euclidean distance in ratio space
+
+function bboxRatios(w, h, d) {
+  const total = w + h + d || 1;
+  return [w / total, h / total, d / total];
+}
+
+function similarity(a, b) {
+  const ra = bboxRatios(a.w, a.h, a.d);
+  const rb = bboxRatios(b.w, b.h, b.d);
+  return Math.sqrt(ra.reduce((s, v, i) => s + (v - rb[i]) ** 2, 0));
+}
+
+function findSimilarModels(bbox, excludePath) {
+  const similar = [];
+  for (const [path, fix] of Object.entries(fixStore)) {
+    if (path === excludePath || !fix.bbox) continue;
+    if (similarity(bbox, fix.bbox) < SIM_THRESHOLD) similar.push(path);
+  }
+  // Also check all known models not yet in store
+  for (const entry of allModels) {
+    if (entry.relativePath === excludePath) continue;
+    if (fixStore[entry.relativePath]?.bbox) continue; // already checked above
+    // No bbox recorded yet — skip (will be populated when loaded)
+  }
+  return similar;
+}
+
+// ── Model state ───────────────────────────────────────────────────────────────
+
+let currentModel   = null;
+let currentPath    = null;   // relativePath of loaded model
+let currentBbox    = null;   // {w,h,d} of loaded model (pre-fix)
+let baseYPosition  = 0;      // position.y after fitCamera, before offset
+let allModels      = [];     // flat list of {name, relativePath}
 
 const gltfLoader = new GLTFLoader();
 const fbxLoader  = new FBXLoader();
 
-const statusEl    = document.getElementById('status');
-const dragHint    = document.getElementById('drag-hint');
-const animSel     = document.getElementById('anim-select');
-const animControls = document.getElementById('anim-controls');
-const speedRange  = document.getElementById('speed-range');
-const scaleRange  = document.getElementById('scale-range');
+// ── DOM refs ─────────────────────────────────────────────────────────────────
 
-function showStatus(msg) {
-  statusEl.textContent = msg;
-  statusEl.style.display = 'block';
+const statusEl        = document.getElementById('status');
+const dragHint        = document.getElementById('drag-hint');
+const animSel         = document.getElementById('anim-select');
+const animControlsDiv = document.getElementById('anim-controls');
+const speedRange      = document.getElementById('speed-range');
+const scaleRange      = document.getElementById('scale-range');
+const yoffsetRange    = document.getElementById('yoffset-range');
+const yoffsetVal      = document.getElementById('yoffset-val');
+const propagateInfo   = document.getElementById('propagate-info');
+const propToast       = document.getElementById('propagation-toast');
+
+function showStatus(msg) { statusEl.textContent = msg; statusEl.style.display = 'block'; }
+function hideStatus()    { statusEl.style.display = 'none'; }
+
+function showToast(msg, ms = 3000) {
+  propToast.textContent = msg;
+  propToast.style.display = 'block';
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { propToast.style.display = 'none'; }, ms);
 }
-function hideStatus() { statusEl.style.display = 'none'; }
+
+// ── Scene clear ───────────────────────────────────────────────────────────────
 
 function clearScene() {
   if (currentModel) {
     scene.remove(currentModel);
     currentModel.traverse(o => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) {
-        [].concat(o.material).forEach(m => m.dispose());
-      }
+      if (o.material) [].concat(o.material).forEach(m => m.dispose());
     });
     currentModel = null;
   }
   if (mixer) { mixer.stopAllAction(); mixer = null; }
   currentAction = null;
   animSel.innerHTML = '';
-  animControls.style.display = 'none';
+  animControlsDiv.style.display = 'none';
 }
 
+// ── Camera fit ────────────────────────────────────────────────────────────────
+
 function fitCamera(object) {
-  const box  = new THREE.Box3().setFromObject(object);
-  const size = box.getSize(new THREE.Vector3());
+  const box    = new THREE.Box3().setFromObject(object);
+  const size   = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
 
-  // Move model so feet are at y=0
   object.position.y -= box.min.y;
   center.y -= box.min.y;
+  baseYPosition = object.position.y;
 
-  const fov = camera.fov * (Math.PI / 180);
-  let dist  = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+  const fov  = camera.fov * (Math.PI / 180);
+  let dist   = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
   dist = Math.max(dist, 0.5);
 
   camera.position.set(center.x, center.y + size.y * 0.4, center.z + dist);
   controls.target.copy(new THREE.Vector3(center.x, center.y + size.y * 0.3, center.z));
   controls.update();
+
+  return { w: size.x, h: size.y, d: size.z };
 }
+
+// ── Apply a stored fix to the loaded model ────────────────────────────────────
+
+function applyFix(fix) {
+  if (!currentModel) return;
+  const yOff = fix.yOffset ?? 0;
+  const scExp = fix.scaleExp ?? 0;
+  currentModel.position.y = baseYPosition + yOff;
+  const s = Math.pow(10, scExp * 0.5);
+  currentModel.scale.setScalar(s);
+  yoffsetRange.value = yOff;
+  yoffsetVal.textContent = yOff.toFixed(3);
+  scaleRange.value  = scExp;
+}
+
+// ── Animations ────────────────────────────────────────────────────────────────
 
 function playAnimation(index) {
   if (!mixer) return;
   if (currentAction) currentAction.stop();
-  const clips = mixer._actions.length ? mixer._root.animations : [];
-  // animations are stored on the root object
-  const clip = mixer._root.animations[index];
+  const clip = mixer._root.animations?.[index];
   if (!clip) return;
   currentAction = mixer.clipAction(clip);
   currentAction.timeScale = parseFloat(speedRange.value);
   currentAction.play();
 }
 
-function loadAnimations(animations, object) {
+function loadAnimations(anims, object) {
   mixer = new THREE.AnimationMixer(object);
-  object.animations = animations;
-
+  object.animations = anims;
   animSel.innerHTML = '';
-  animations.forEach((clip, i) => {
+  anims.forEach((clip, i) => {
     const opt = document.createElement('option');
     opt.value = i;
     opt.textContent = clip.name || `Clip ${i + 1}`;
     animSel.appendChild(opt);
   });
-
-  animControls.style.display = animations.length ? 'block' : 'none';
-  if (animations.length) playAnimation(0);
+  animControlsDiv.style.display = anims.length ? 'block' : 'none';
+  if (anims.length) playAnimation(0);
 }
 
-function onModelLoaded(object, animations = []) {
+// ── onModelLoaded ─────────────────────────────────────────────────────────────
+
+function onModelLoaded(object, animations, relPath) {
   clearScene();
 
-  // Ensure correct color space on all textures
   object.traverse(child => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-      const mats = [].concat(child.material);
-      mats.forEach(m => {
-        if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
-        if (m.emissiveMap) m.emissiveMap.colorSpace = THREE.SRGBColorSpace;
-      });
-    }
+    if (!child.isMesh) return;
+    child.castShadow = child.receiveShadow = true;
+    [].concat(child.material).forEach(m => {
+      if (m.map)         m.map.colorSpace         = THREE.SRGBColorSpace;
+      if (m.emissiveMap) m.emissiveMap.colorSpace  = THREE.SRGBColorSpace;
+    });
   });
 
-  scaleRange.value = 0;
-  fitCamera(object);
+  const bbox = fitCamera(object);
+  currentBbox = bbox;
 
   scene.add(object);
   currentModel = object;
 
+  // If we have a stored fix for this model, apply it
+  const fix = fixStore[relPath];
+  if (fix) {
+    applyFix(fix);
+  } else {
+    yoffsetRange.value = 0;
+    yoffsetVal.textContent = '0.000';
+    scaleRange.value = 0;
+  }
+
+  // Update bbox in store (for future similarity matching)
+  if (relPath) {
+    if (!fixStore[relPath]) fixStore[relPath] = {};
+    fixStore[relPath].bbox = bbox;
+    saveStore(fixStore);
+  }
+
+  // Show propagate info / audit comment
+  if (relPath && fix) {
+    const similar = findSimilarModels(bbox, relPath);
+    const lines = [];
+    if (fix.auditComment) lines.push(`📝 "${fix.auditComment}"`);
+    if (similar.length)   lines.push(`≈ ${similar.length} similar model(s) share this fix`);
+    if (lines.length) {
+      propagateInfo.style.display = 'block';
+      propagateInfo.innerHTML = lines.join('<br/>');
+    } else {
+      propagateInfo.style.display = 'none';
+    }
+  } else {
+    propagateInfo.style.display = 'none';
+  }
+
+  updateSidebarBadges();
   loadAnimations(animations, object);
   dragHint.classList.add('hidden');
   hideStatus();
 }
 
-function loadModel(urlPath, name) {
+// ── Load a model by URL ───────────────────────────────────────────────────────
+
+function loadModel(urlPath, name, relPath = null) {
+  currentPath = relPath;
   showStatus(`Loading ${name}…`);
   const ext = name.split('.').pop().toLowerCase();
 
+  const onProgress = xhr => {
+    if (xhr.total) showStatus(`Loading ${name} — ${Math.round(xhr.loaded / xhr.total * 100)}%`);
+  };
+  const onError = err => { hideStatus(); console.error(err); };
+
   if (ext === 'glb' || ext === 'gltf') {
-    gltfLoader.load(
-      urlPath,
-      gltf => onModelLoaded(gltf.scene, gltf.animations),
-      xhr => {
-        if (xhr.total) showStatus(`Loading ${name} — ${Math.round(xhr.loaded / xhr.total * 100)}%`);
-      },
-      err => { hideStatus(); alert(`Failed to load ${name}:\n${err.message}`); }
-    );
+    gltfLoader.load(urlPath,
+      gltf => onModelLoaded(gltf.scene, gltf.animations, relPath),
+      onProgress, onError);
   } else if (ext === 'fbx') {
-    fbxLoader.load(
-      urlPath,
-      fbx => onModelLoaded(fbx, fbx.animations || []),
-      xhr => {
-        if (xhr.total) showStatus(`Loading ${name} — ${Math.round(xhr.loaded / xhr.total * 100)}%`);
-      },
-      err => { hideStatus(); alert(`Failed to load ${name}:\n${err.message}`); }
-    );
+    fbxLoader.load(urlPath,
+      fbx  => onModelLoaded(fbx, fbx.animations || [], relPath),
+      onProgress, onError);
   } else {
-    hideStatus();
-    alert(`Unsupported format: .${ext}`);
+    hideStatus(); alert(`Unsupported format: .${ext}`);
   }
+}
+
+function modelUrl(relPath) {
+  return '/models/' + relPath.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
 }
 
 // ── Sidebar population ────────────────────────────────────────────────────────
 
+function updateSidebarBadges() {
+  document.querySelectorAll('.model-btn[data-path]').forEach(btn => {
+    const rp = btn.dataset.path;
+    btn.classList.remove('has-fix', 'similar-fix');
+    if (!fixStore[rp]) return;
+    if (fixStore[rp].yOffset !== undefined || fixStore[rp].scaleExp !== undefined) {
+      btn.classList.add('has-fix');
+    }
+  });
+  // Mark models that are similar to a fixed one
+  const fixedEntries = Object.entries(fixStore).filter(
+    ([, v]) => v.bbox && (v.yOffset !== undefined || v.scaleExp !== undefined)
+  );
+  document.querySelectorAll('.model-btn[data-path]').forEach(btn => {
+    if (btn.classList.contains('has-fix')) return;
+    const rp = btn.dataset.path;
+    const bbox = fixStore[rp]?.bbox;
+    if (!bbox) return;
+    const isSimilar = fixedEntries.some(([fp, fv]) => fp !== rp && similarity(bbox, fv.bbox) < SIM_THRESHOLD);
+    if (isSimilar) btn.classList.add('similar-fix');
+  });
+}
+
 async function loadModelList() {
   const listEl = document.getElementById('model-list');
-
   let data;
   try {
     const res = await fetch('/api/models');
     data = await res.json();
-  } catch (e) {
-    listEl.innerHTML = `<div id="no-models">
-      Could not reach server API.<br/>Make sure server.js is running.
-    </div>`;
+  } catch {
+    listEl.innerHTML = `<div id="no-models">Could not reach server API. Make sure server.js is running.</div>`;
     return;
   }
 
-  if (!data.modelsDir || data.folders.length === 0) {
+  if (!data.modelsDir || !data.folders.length) {
     listEl.innerHTML = `<div id="no-models">
       No models found.<br/><br/>
-      Create <b>models.config.json</b> in the project root:<br/>
-      <code>{ "modelsDir": "C:\\\\Users\\\\macie\\\\OneDrive\\\\Desktop\\\\BLUEY ANIMATED\\\\MODELS\\\\Bluey World" }</code>
-      <br/><br/>Or run:<br/>
-      <code>node server.js --models "C:\\Users\\macie\\..."</code>
+      Create <b>models.config.json</b>:<br/>
+      <code>{"modelsDir":"C:\\\\Users\\\\macie\\\\OneDrive\\\\Desktop\\\\BLUEY ANIMATED\\\\MODELS\\\\Bluey World"}</code>
     </div>`;
     return;
   }
 
+  allModels = [];
   listEl.innerHTML = '';
+
   for (const folder of data.folders) {
     const group = document.createElement('div');
     group.className = 'folder-group';
@@ -528,39 +754,47 @@ async function loadModelList() {
     group.appendChild(label);
 
     for (const model of folder.models) {
+      allModels.push(model);
+
+      const row = document.createElement('div');
+      row.className = 'model-row';
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'model-check';
+      chk.dataset.path = model.relativePath;
+      chk.addEventListener('change', updateAuditCount);
+
       const btn = document.createElement('button');
       btn.className = 'model-btn';
       btn.textContent = model.name;
       btn.title = model.relativePath;
+      btn.dataset.path = model.relativePath;
       btn.addEventListener('click', () => {
         document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        loadModel('/models/' + encodeURIComponent(model.relativePath).replace(/%5C/g, '/').replace(/%2F/g, '/'), model.name);
+        loadModel(modelUrl(model.relativePath), model.name, model.relativePath);
       });
-      group.appendChild(btn);
+
+      row.appendChild(chk);
+      row.appendChild(btn);
+      group.appendChild(row);
     }
     listEl.appendChild(group);
   }
+
+  updateSidebarBadges();
+  document.getElementById('btn-batch').disabled = allModels.length === 0;
 }
 
 loadModelList();
 
-// ── Control panel events ──────────────────────────────────────────────────────
+// ── Fix controls ──────────────────────────────────────────────────────────────
 
-animSel.addEventListener('change', () => playAnimation(parseInt(animSel.value)));
-
-speedRange.addEventListener('input', () => {
-  if (currentAction) currentAction.timeScale = parseFloat(speedRange.value);
-});
-
-document.getElementById('btn-play').addEventListener('click', () => {
-  if (currentAction) currentAction.play();
-});
-document.getElementById('btn-pause').addEventListener('click', () => {
-  if (currentAction) currentAction.paused = !currentAction.paused;
-});
-document.getElementById('btn-reset').addEventListener('click', () => {
-  if (currentAction) { currentAction.reset(); currentAction.play(); }
+yoffsetRange.addEventListener('input', () => {
+  const yOff = parseFloat(yoffsetRange.value);
+  yoffsetVal.textContent = yOff.toFixed(3);
+  if (currentModel) currentModel.position.y = baseYPosition + yOff;
 });
 
 scaleRange.addEventListener('input', () => {
@@ -569,11 +803,253 @@ scaleRange.addEventListener('input', () => {
   currentModel.scale.setScalar(s);
 });
 
+document.getElementById('btn-save-fix').addEventListener('click', () => {
+  if (!currentPath || !currentBbox) { alert('Load a model first.'); return; }
+
+  const yOff  = parseFloat(yoffsetRange.value);
+  const scExp = parseFloat(scaleRange.value);
+
+  // Save fix for current model
+  if (!fixStore[currentPath]) fixStore[currentPath] = {};
+  fixStore[currentPath].yOffset  = yOff;
+  fixStore[currentPath].scaleExp = scExp;
+  fixStore[currentPath].bbox     = currentBbox;
+
+  // Propagate to similar models (those with recorded bboxes)
+  const similar = findSimilarModels(currentBbox, currentPath);
+  for (const rp of similar) {
+    if (!fixStore[rp]) fixStore[rp] = {};
+    fixStore[rp].yOffset  = yOff;
+    fixStore[rp].scaleExp = scExp;
+    // keep their own bbox
+  }
+
+  saveStore(fixStore);
+  updateSidebarBadges();
+
+  if (similar.length) {
+    showToast(`✓ Fix saved & propagated to ${similar.length} similar model(s): ${similar.map(p => p.split(/[\\/]/).pop()).join(', ')}`, 5000);
+    propagateInfo.style.display = 'block';
+    propagateInfo.textContent = `≈ Propagated to ${similar.length} similar model(s)`;
+  } else {
+    showToast('✓ Fix saved for this model');
+    propagateInfo.style.display = 'none';
+  }
+});
+
+document.getElementById('btn-clear-fix').addEventListener('click', () => {
+  if (!currentPath) return;
+  if (fixStore[currentPath]) {
+    delete fixStore[currentPath].yOffset;
+    delete fixStore[currentPath].scaleExp;
+    saveStore(fixStore);
+  }
+  yoffsetRange.value = 0;
+  yoffsetVal.textContent = '0.000';
+  scaleRange.value = 0;
+  if (currentModel) {
+    currentModel.position.y = baseYPosition;
+    currentModel.scale.setScalar(1);
+  }
+  propagateInfo.style.display = 'none';
+  updateSidebarBadges();
+  showToast('Fix cleared for this model');
+});
+
+// ── Animation controls ────────────────────────────────────────────────────────
+
+animSel.addEventListener('change', () => playAnimation(parseInt(animSel.value)));
+speedRange.addEventListener('input', () => { if (currentAction) currentAction.timeScale = parseFloat(speedRange.value); });
+document.getElementById('btn-play').addEventListener('click',  () => { if (currentAction) currentAction.play(); });
+document.getElementById('btn-pause').addEventListener('click', () => { if (currentAction) currentAction.paused = !currentAction.paused; });
+document.getElementById('btn-reset').addEventListener('click', () => { if (currentAction) { currentAction.reset(); currentAction.play(); } });
+
 document.getElementById('bg-color').addEventListener('input', e => {
   scene.background = new THREE.Color(e.target.value);
 });
 
-// ── Drag-and-drop local files ─────────────────────────────────────────────────
+// ── Audit comment parser ──────────────────────────────────────────────────────
+// Reads a plain-English description and returns { yOffset?, scaleExp? } hints.
+
+function parseAuditComment(text) {
+  if (!text) return {};
+  const t = text.toLowerCase();
+  const hint = {};
+
+  // Y-offset clues (ground/feet/floating/sinking)
+  if (/sink|too low|below ground|underground|feet.*ground|into.*ground|into.*floor/.test(t)) {
+    // model sinks → lift it up
+    hint.yOffsetDelta = +0.05;
+  }
+  if (/float|hover|above ground|too high|off.*(ground|floor)/.test(t)) {
+    // model floats → push it down
+    hint.yOffsetDelta = -0.05;
+  }
+
+  // Scale clues
+  if (/too (big|large|tall|wide)|oversized/.test(t)) {
+    hint.scaleExpDelta = -0.3;
+  }
+  if (/too (small|tiny|short)|undersized/.test(t)) {
+    hint.scaleExpDelta = +0.3;
+  }
+
+  // Clipping body parts — treat as a Y-offset lift (most common cause)
+  if (/clip|intersect|overlap|through/.test(t)) {
+    if (!hint.yOffsetDelta) hint.yOffsetDelta = +0.04;
+  }
+
+  hint.comment = text;   // store verbatim for the record
+  return hint;
+}
+
+// ── Batch processing ──────────────────────────────────────────────────────────
+
+let batchCancelled = false;
+
+async function runBatch(modelsToProcess, fixHint = {}) {
+  const overlay    = document.getElementById('batch-overlay');
+  const fill       = document.getElementById('batch-progress-fill');
+  const batchLabel = document.getElementById('batch-label');
+  const title      = document.getElementById('batch-overlay-title');
+
+  batchCancelled = false;
+  overlay.classList.add('visible');
+  title.textContent = `Processing ${modelsToProcess.length} models…`;
+
+  for (let i = 0; i < modelsToProcess.length; i++) {
+    if (batchCancelled) break;
+    const model = modelsToProcess[i];
+    batchLabel.textContent = `${i + 1} / ${modelsToProcess.length} — ${model.name}`;
+    fill.style.width = `${(i / modelsToProcess.length) * 100}%`;
+
+    // Load model silently to record its bbox
+    await new Promise(resolve => {
+      const ext = model.name.split('.').pop().toLowerCase();
+      const url = modelUrl(model.relativePath);
+      const onLoaded = (object) => {
+        const box  = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const bbox = { w: size.x, h: size.y, d: size.z };
+
+        // Record bbox
+        if (!fixStore[model.relativePath]) fixStore[model.relativePath] = {};
+        fixStore[model.relativePath].bbox = bbox;
+
+        // If audit comment supplied specific adjustments, apply them on top of any existing fix
+        if (fixHint.yOffsetDelta !== undefined) {
+          const cur = fixStore[model.relativePath].yOffset ?? 0;
+          fixStore[model.relativePath].yOffset = parseFloat((cur + fixHint.yOffsetDelta).toFixed(4));
+        }
+        if (fixHint.scaleExpDelta !== undefined) {
+          const cur = fixStore[model.relativePath].scaleExp ?? 0;
+          fixStore[model.relativePath].scaleExp = parseFloat((cur + fixHint.scaleExpDelta).toFixed(4));
+        }
+        if (fixHint.comment) {
+          fixStore[model.relativePath].auditComment = fixHint.comment;
+        }
+
+        // If no fix yet and no hint, auto-propagate from similar already-fixed model
+        const hasExplicitFix = fixStore[model.relativePath].yOffset !== undefined;
+        if (!hasExplicitFix && !fixHint.yOffsetDelta) {
+          const allFixed = Object.entries(fixStore).filter(
+            ([p, v]) => p !== model.relativePath && v.bbox &&
+                        v.yOffset !== undefined && similarity(bbox, v.bbox) < SIM_THRESHOLD
+          );
+          if (allFixed.length) {
+            const [, bestFix] = allFixed[0];
+            fixStore[model.relativePath].yOffset  = bestFix.yOffset;
+            fixStore[model.relativePath].scaleExp = bestFix.scaleExp;
+          }
+        }
+
+        // Dispose
+        object.traverse(o => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) [].concat(o.material).forEach(m => m.dispose());
+        });
+        saveStore(fixStore);
+        resolve();
+      };
+
+      if (ext === 'glb' || ext === 'gltf') {
+        gltfLoader.load(url, gltf => onLoaded(gltf.scene), undefined, resolve);
+      } else if (ext === 'fbx') {
+        fbxLoader.load(url, fbx => onLoaded(fbx), undefined, resolve);
+      } else {
+        resolve();
+      }
+    });
+
+    // Small yield so UI stays responsive
+    await new Promise(r => setTimeout(r, 10));
+  }
+
+  fill.style.width = '100%';
+  overlay.classList.remove('visible');
+  updateSidebarBadges();
+
+  const propagatedCount = Object.values(fixStore)
+    .filter(v => v.yOffset !== undefined).length;
+  showToast(`Batch complete — ${propagatedCount} models have fixes applied`, 5000);
+}
+
+document.getElementById('btn-batch').addEventListener('click', () => {
+  if (!allModels.length) return;
+  runBatch(allModels);
+});
+
+document.getElementById('batch-cancel').addEventListener('click', () => {
+  batchCancelled = true;
+});
+
+// ── Secondary audit / re-audit mode ──────────────────────────────────────────
+
+let auditMode = false;
+
+function setAuditMode(on) {
+  auditMode = on;
+  document.getElementById('model-list').classList.toggle('audit-mode', on);
+  document.getElementById('audit-footer').classList.toggle('visible', on);
+  document.getElementById('btn-audit-mode').classList.toggle('active-mode', on);
+  if (!on) {
+    // Uncheck all
+    document.querySelectorAll('.model-check').forEach(c => { c.checked = false; });
+    updateAuditCount();
+  }
+}
+
+function updateAuditCount() {
+  const n = document.querySelectorAll('.model-check:checked').length;
+  document.getElementById('audit-count').textContent =
+    n === 0 ? 'No models selected' : `${n} model${n > 1 ? 's' : ''} selected`;
+  document.getElementById('btn-run-audit').disabled = n === 0;
+}
+
+document.getElementById('btn-audit-mode').addEventListener('click', () => {
+  setAuditMode(!auditMode);
+});
+
+document.getElementById('btn-cancel-audit').addEventListener('click', () => {
+  setAuditMode(false);
+});
+
+document.getElementById('btn-run-audit').addEventListener('click', () => {
+  const selected = [...document.querySelectorAll('.model-check:checked')]
+    .map(c => allModels.find(m => m.relativePath === c.dataset.path))
+    .filter(Boolean);
+  if (!selected.length) return;
+
+  const comment = document.getElementById('audit-comment').value.trim();
+  const fixHint = parseAuditComment(comment);
+
+  setAuditMode(false);
+  document.getElementById('batch-overlay-title').textContent =
+    `Re-auditing ${selected.length} selected model(s)…`;
+  runBatch(selected, fixHint);
+});
+
+// ── Drag-and-drop ─────────────────────────────────────────────────────────────
 
 const viewport = document.getElementById('viewport');
 viewport.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
@@ -581,8 +1057,7 @@ viewport.addEventListener('drop', e => {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  const url = URL.createObjectURL(file);
-  loadModel(url, file.name);
+  loadModel(URL.createObjectURL(file), file.name, null);
 });
 </script>
 </body>
