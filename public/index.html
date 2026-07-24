@@ -422,6 +422,7 @@ scene.add(dirLight);
 const fillLight = new THREE.DirectionalLight(0xb0c8ff, 0.8);
 fillLight.position.set(-4, 2, -3);
 scene.add(fillLight);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x888899, 0.6));
 
 scene.add(new THREE.GridHelper(10, 20, 0x303060, 0x222244));
 
@@ -605,7 +606,16 @@ function loadAnimations(anims, object) {
     animSel.appendChild(opt);
   });
   animControlsDiv.style.display = anims.length ? 'block' : 'none';
-  if (anims.length) playAnimation(0);
+  if (anims.length) {
+    const preferred = anims.findIndex(c =>
+      /idle|stand|default|pose|t.?pose/i.test(c.name));
+    const avoid = anims.findIndex(c =>
+      /sleep|rest|sit|lie|lay|dead|faint/i.test(c.name));
+    const pick = preferred >= 0 ? preferred
+               : (avoid === 0 && anims.length > 1 ? 1 : 0);
+    animSel.value = pick;
+    playAnimation(pick);
+  }
 }
 
 // ── onModelLoaded ─────────────────────────────────────────────────────────────
@@ -616,9 +626,29 @@ function onModelLoaded(object, animations, relPath) {
   object.traverse(child => {
     if (!child.isMesh) return;
     child.castShadow = child.receiveShadow = true;
-    [].concat(child.material).forEach(m => {
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach(m => {
       if (m.map)         m.map.colorSpace         = THREE.SRGBColorSpace;
       if (m.emissiveMap) m.emissiveMap.colorSpace  = THREE.SRGBColorSpace;
+
+      ['normalMap','roughnessMap','metalnessMap','aoMap','displacementMap'].forEach(k => {
+        if (m[k]) m[k].colorSpace = THREE.LinearSRGBColorSpace;
+      });
+
+      if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+        if (!m.metalnessMap) m.metalness = 0;
+        if (!m.roughnessMap && m.roughness < 0.3) m.roughness = 0.7;
+      }
+
+      m.side = THREE.DoubleSide;
+
+      if (m.transparent && m.alphaMap) {
+        m.alphaTest = Math.max(m.alphaTest, 0.05);
+        m.depthWrite = true;
+      }
+
+      m.needsUpdate = true;
     });
   });
 
