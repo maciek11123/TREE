@@ -1,35 +1,720 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terrain Trees</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, sans-serif;
-      background: #0f1a14;
-      color: #e6f2ea;
-    }
-    .card {
-      text-align: center;
-      padding: 2rem 3rem;
-      border: 1px solid #24503a;
-      border-radius: 12px;
-      background: #142a1f;
-    }
-    h1 { margin: 0 0 .5rem; }
-    code { background: #0b1710; padding: .15em .4em; border-radius: 4px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>SimpleNotes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0b0b;
+            --text-main: #E8E8E8;
+            --text-dim: #7a7a7a;
+            --border-color: #2a2a2a;
+            --danger-color: #ff5c5c;
+            --hover-color: #ffffff;
+            --fs-scale: 1.1;
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 32px 16px 120px;
+            font-size: calc(16px * var(--fs-scale));
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .header-text {
+            margin-bottom: 2px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        .app-title {
+            font-size: 1.4em;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .note-count {
+            font-size: 0.72em;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section-label {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: var(--text-dim);
+            padding-bottom: 4px;
+            margin-top: 4px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="text"], textarea {
+            background: color-mix(in srgb, var(--text-main) 5%, transparent);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95em;
+            padding: 14px 16px;
+            width: 100%;
+            outline: none;
+            border-radius: var(--radius-sm);
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: color-mix(in srgb, var(--text-main) 40%, var(--border-color));
+        }
+
+        input[type="text"]::placeholder, textarea::placeholder {
+            color: var(--text-dim);
+        }
+
+        textarea {
+            height: 90px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background: var(--text-main);
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 18px;
+            font-family: inherit;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            flex: 1;
+            min-width: 100px;
+            transition: opacity 0.15s;
+        }
+
+        button:hover { opacity: 0.85; }
+        button:active { opacity: 0.7; }
+
+        button.secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        button.cancel-btn {
+            display: none;
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border-color);
+            flex: 0.5;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 0;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+            border-radius: 0;
+            padding: 8px 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+            min-width: auto;
+            transition: all 0.15s;
+        }
+
+        .mode-btn.active {
+            background: var(--text-main);
+            color: var(--bg-color);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .note-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 2px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: padding-left 0.2s;
+        }
+
+        .note-row:hover {
+            padding-left: 4px;
+        }
+
+        .note-row:last-child {
+            border-bottom: none;
+        }
+
+        .note-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .note-title-text {
+            font-size: 0.98em;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-preview {
+            font-size: 0.82em;
+            font-weight: 400;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .note-date {
+            font-size: 0.68em;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+            align-items: flex-start;
+            padding-top: 2px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 0.78em;
+            font-weight: 500;
+            min-width: auto;
+            flex: none;
+            border-radius: 6px;
+            transition: color 0.15s;
+        }
+
+        .icon-btn:hover { color: var(--hover-color); opacity: 1; }
+        .icon-btn.danger:hover { color: var(--danger-color); }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82em;
+            color: var(--text-dim);
+        }
+
+        .checklist-item.checked span {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .note-checklist-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        input[type="checkbox"]:checked {
+            background: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        input[type="checkbox"]:checked::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            width: 5px;
+            height: 9px;
+            border: solid var(--bg-color);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .list-builder {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .list-builder.active { display: flex; }
+
+        .list-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .list-input-row input[type="text"] {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 0.88em;
+        }
+
+        .list-input-row .icon-btn {
+            padding: 6px 8px;
+        }
+
+        .add-item-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px dashed var(--border-color);
+            padding: 8px 14px;
+            font-size: 0.78em;
+            font-weight: 500;
+            min-width: auto;
+            border-radius: var(--radius-sm);
+        }
+
+        .add-item-btn:hover { color: var(--text-main); border-color: var(--text-dim); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-icon {
+            font-size: 2em;
+            opacity: 0.3;
+            margin-bottom: 10px;
+        }
+
+        .empty-text {
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        #expanded-panel {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+
+        #expanded-panel.open { display: flex; }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .settings-row label {
+            font-size: 0.82em;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .size-btn {
+            padding: 6px 14px;
+            font-size: 0.75em;
+            font-weight: 600;
+            min-width: auto;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: var(--radius-sm);
+            flex: none;
+        }
+
+        .size-btn.active {
+            background: var(--text-main);
+            color: var(--bg-color);
+            border-color: var(--text-main);
+        }
+
+        .settings-toggle {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1em;
+            min-width: auto;
+            flex: none;
+            transition: color 0.15s;
+        }
+
+        .settings-toggle:hover { color: var(--hover-color); opacity: 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .note-row { transition: none; }
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h1>🌲 Terrain Trees</h1>
-    <p>Live-reload server is running.</p>
-    <p>Edit <code>public/index.html</code> and this page refreshes on save.</p>
-  </div>
+
+<div id="app-container">
+    <div class="header-text">
+        <span class="app-title">SimpleNotes</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span class="note-count" id="noteCount"></span>
+            <button class="settings-toggle" onclick="toggleSettings()">&#9881;</button>
+        </div>
+    </div>
+
+    <div id="expanded-panel">
+        <div class="settings-row">
+            <label>Text Size</label>
+            <div style="display:flex;gap:4px;">
+                <button class="size-btn" onclick="setSize(1)" id="sz-1">S</button>
+                <button class="size-btn active" onclick="setSize(1.1)" id="sz-1.1">M</button>
+                <button class="size-btn" onclick="setSize(1.25)" id="sz-1.25">L</button>
+            </div>
+        </div>
+        <button class="secondary" onclick="exportNotes()">Export Notes</button>
+    </div>
+
+    <div class="input-section">
+        <input type="text" id="titleInput" placeholder="Title" autocomplete="off" maxlength="120">
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="mode-text" onclick="setMode('text')">Note</button>
+            <button class="mode-btn" id="mode-list" onclick="setMode('list')">Checklist</button>
+        </div>
+
+        <textarea id="bodyInput" placeholder="Write something..."></textarea>
+
+        <div id="listBuilder" class="list-builder">
+            <div id="listItems"></div>
+            <button class="add-item-btn" onclick="addListRow()">+ Add item</button>
+        </div>
+
+        <div class="action-row">
+            <button id="saveBtn" onclick="saveNote()">Save Note</button>
+            <button class="cancel-btn" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+        </div>
+    </div>
+
+    <div class="section-label" id="notesLabel" style="display:none">Notes</div>
+    <div class="notes-list" id="notesList"></div>
+</div>
+
+<script>
+let notes = [];
+let editingId = null;
+let mode = 'text';
+
+function load() {
+    try { notes = JSON.parse(localStorage.getItem('simplenotes-data') || '[]'); } catch { notes = []; }
+}
+
+function persist() {
+    localStorage.setItem('simplenotes-data', JSON.stringify(notes));
+}
+
+function fmtDate(ts) {
+    const d = new Date(ts);
+    const mon = d.toLocaleString('en', { month: 'short' }).toUpperCase();
+    const day = d.getDate();
+    const h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${mon} ${day}, ${h % 12 || 12}:${m} ${ampm}`;
+}
+
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function setMode(m) {
+    mode = m;
+    document.getElementById('mode-text').classList.toggle('active', m === 'text');
+    document.getElementById('mode-list').classList.toggle('active', m === 'list');
+    document.getElementById('bodyInput').style.display = m === 'text' ? '' : 'none';
+    document.getElementById('listBuilder').classList.toggle('active', m === 'list');
+    if (m === 'list' && document.getElementById('listItems').children.length === 0) addListRow();
+}
+
+function addListRow(text, checked) {
+    const container = document.getElementById('listItems');
+    const row = document.createElement('div');
+    row.className = 'list-input-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    if (checked) cb.checked = true;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = 'Item...';
+    inp.value = text || '';
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addListRow(); }
+    });
+    const del = document.createElement('button');
+    del.className = 'icon-btn danger';
+    del.textContent = '×';
+    del.onclick = () => { row.remove(); };
+    row.appendChild(cb);
+    row.appendChild(inp);
+    row.appendChild(del);
+    container.appendChild(row);
+    if (!text) inp.focus();
+}
+
+function getListData() {
+    const rows = document.querySelectorAll('#listItems .list-input-row');
+    const items = [];
+    rows.forEach(r => {
+        const inp = r.querySelector('input[type="text"]');
+        const chk = r.querySelector('input[type="checkbox"]');
+        if (inp && inp.value.trim()) items.push({ text: inp.value.trim(), checked: chk ? chk.checked : false });
+    });
+    return items;
+}
+
+function saveNote() {
+    const title = document.getElementById('titleInput').value.trim();
+    let body, isList = mode === 'list';
+
+    if (isList) {
+        body = getListData();
+        if (!title && body.length === 0) return;
+    } else {
+        body = document.getElementById('bodyInput').value.trim();
+        if (!title && !body) return;
+    }
+
+    if (editingId !== null) {
+        const note = notes.find(n => n.id === editingId);
+        if (note) {
+            note.title = title || 'Untitled';
+            note.body = body;
+            note.isList = isList;
+            note.updated = Date.now();
+        }
+        cancelEdit();
+    } else {
+        notes.unshift({
+            id: Date.now(),
+            title: title || 'Untitled',
+            body: body || (isList ? [] : ''),
+            isList,
+            created: Date.now(),
+            updated: Date.now()
+        });
+        clearInputs();
+    }
+    persist();
+    render();
+}
+
+function clearInputs() {
+    document.getElementById('titleInput').value = '';
+    document.getElementById('bodyInput').value = '';
+    document.getElementById('listItems').innerHTML = '';
+    setMode('text');
+}
+
+function editNote(id) {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    editingId = id;
+    document.getElementById('titleInput').value = note.title === 'Untitled' ? '' : note.title;
+    document.getElementById('listItems').innerHTML = '';
+
+    if (note.isList) {
+        setMode('list');
+        note.body.forEach(item => addListRow(item.text, item.checked));
+    } else {
+        setMode('text');
+        document.getElementById('bodyInput').value = note.body;
+    }
+
+    document.getElementById('saveBtn').textContent = 'Update';
+    document.getElementById('cancelBtn').style.display = '';
+    document.getElementById('titleInput').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+    editingId = null;
+    clearInputs();
+    document.getElementById('saveBtn').textContent = 'Save Note';
+    document.getElementById('cancelBtn').style.display = 'none';
+}
+
+function deleteNote(id) {
+    notes = notes.filter(n => n.id !== id);
+    if (editingId === id) cancelEdit();
+    persist();
+    render();
+}
+
+function toggleCheck(noteId, idx) {
+    const note = notes.find(n => n.id === noteId);
+    if (note && note.isList && note.body[idx]) {
+        note.body[idx].checked = !note.body[idx].checked;
+        persist();
+        render();
+    }
+}
+
+function render() {
+    const list = document.getElementById('notesList');
+    const count = document.getElementById('noteCount');
+    const label = document.getElementById('notesLabel');
+
+    count.textContent = notes.length ? `${notes.length} note${notes.length !== 1 ? 's' : ''}` : '';
+    label.style.display = notes.length ? '' : 'none';
+
+    if (!notes.length) {
+        list.innerHTML = `<div class="empty-state">
+            <div class="empty-icon">&#9997;</div>
+            <div class="empty-text">No notes yet</div>
+        </div>`;
+        return;
+    }
+
+    list.innerHTML = notes.map(n => {
+        let preview = '';
+        if (n.isList && Array.isArray(n.body)) {
+            const shown = n.body.slice(0, 3);
+            preview = `<div class="note-checklist-preview">${shown.map((item, idx) =>
+                `<div class="checklist-item${item.checked ? ' checked' : ''}">
+                    <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleCheck(${n.id},${idx})">
+                    <span>${esc(item.text)}</span>
+                </div>`
+            ).join('')}${n.body.length > 3 ? `<span style="font-size:0.75em;color:var(--text-dim);padding-left:28px">+${n.body.length - 3} more</span>` : ''}</div>`;
+        } else if (n.body) {
+            preview = `<div class="note-preview">${esc(n.body)}</div>`;
+        }
+
+        return `<div class="note-row" onclick="editNote(${n.id})">
+            <div class="note-left">
+                <div class="note-title-text">${esc(n.title)}</div>
+                ${preview}
+            </div>
+            <div class="note-actions">
+                <span class="note-date">${fmtDate(n.updated || n.created)}</span>
+                <button class="icon-btn danger" onclick="event.stopPropagation();deleteNote(${n.id})" title="Delete">×</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleSettings() {
+    document.getElementById('expanded-panel').classList.toggle('open');
+}
+
+function setSize(scale) {
+    document.documentElement.style.setProperty('--fs-scale', scale);
+    localStorage.setItem('simplenotes-size', scale);
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b.id === `sz-${scale}`));
+}
+
+function exportNotes() {
+    const text = notes.map(n => {
+        let body = '';
+        if (n.isList && Array.isArray(n.body)) {
+            body = n.body.map(i => `  [${i.checked ? 'x' : ' '}] ${i.text}`).join('\n');
+        } else {
+            body = n.body || '';
+        }
+        return `# ${n.title}\n${fmtDate(n.updated || n.created)}\n\n${body}`;
+    }).join('\n\n---\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'simplenotes-export.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// Init
+load();
+const savedSize = localStorage.getItem('simplenotes-size');
+if (savedSize) setSize(parseFloat(savedSize));
+render();
+
+document.getElementById('bodyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.metaKey) { e.preventDefault(); saveNote(); }
+});
+document.getElementById('titleInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('bodyInput').focus(); }
+});
+</script>
 </body>
 </html>
