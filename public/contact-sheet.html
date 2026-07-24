@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bluey Contact Sheet</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121220;
+      color: #e0e0f0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      color: #e94560;
+      margin-bottom: 6px;
+    }
+    #subtitle {
+      text-align: center;
+      font-size: .82rem;
+      color: #8888aa;
+      margin-bottom: 20px;
+    }
+    #progress-bar {
+      width: 100%;
+      max-width: 500px;
+      height: 6px;
+      background: #1a1a3e;
+      border-radius: 3px;
+      margin: 0 auto 20px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: #e94560;
+      width: 0;
+      border-radius: 3px;
+      transition: width .3s;
+    }
+    #progress-label {
+      text-align: center;
+      font-size: .78rem;
+      color: #8888aa;
+      margin-bottom: 16px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    #controls label {
+      font-size: .8rem;
+      color: #9999bb;
+    }
+    #controls select, #controls input[type=color] {
+      background: #1a1a3e;
+      border: 1px solid #2a2a5e;
+      border-radius: 4px;
+      color: #e0e0f0;
+      font-size: .78rem;
+      padding: 3px 8px;
+    }
+    .btn {
+      background: #0f3460;
+      border: 1px solid #1a4080;
+      border-radius: 5px;
+      color: #e0e0f0;
+      font-size: .8rem;
+      padding: 6px 16px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #e94560; border-color: #e94560; }
+    .btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4e;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      display: block;
+      background: var(--render-bg, #c8dce8);
+    }
+    .card .label {
+      padding: 8px 10px;
+      font-size: .78rem;
+      color: #c0c0dc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-top: 1px solid #2a2a4e;
+    }
+    .card .label .folder {
+      font-size: .68rem;
+      color: #666688;
+      display: block;
+      margin-top: 2px;
+    }
+    .card .badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(22, 33, 62, .85);
+      border: 1px solid #2a2a5e;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .65rem;
+      color: #8888aa;
+    }
+    .card.error img { display: none; }
+    .card.error .err-msg {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e94560;
+      font-size: .78rem;
+      padding: 20px;
+      text-align: center;
+      background: #1a1a2e;
+    }
+    #no-models {
+      text-align: center;
+      color: #8888aa;
+      padding: 60px 20px;
+      font-size: .9rem;
+      line-height: 1.8;
+    }
+    #no-models code {
+      background: #1a1a3e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .82rem;
+    }
+    #offscreen {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 512px;
+      height: 512px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bluey Contact Sheet</h1>
+<div id="subtitle">Renders every model from your local server into a grid</div>
+
+<div id="controls">
+  <label>BG: <input type="color" id="bg-color" value="#c8dce8" title="Render background color" /></label>
+  <label>Size:
+    <select id="render-size">
+      <option value="256">256px</option>
+      <option value="512" selected>512px</option>
+      <option value="1024">1024px</option>
+    </select>
+  </label>
+  <button class="btn" id="btn-render">Render All</button>
+  <button class="btn" id="btn-download" disabled>Download Sheet</button>
+</div>
+
+<div id="progress-bar"><div id="progress-fill"></div></div>
+<div id="progress-label">&nbsp;</div>
+
+<div id="grid"></div>
+<div id="no-models" style="display:none">
+  No models found.<br/>Make sure <code>server.js</code> is running with your models directory configured.
+</div>
+
+<div id="offscreen"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader }  from 'three/addons/loaders/FBXLoader.js';
+
+const gltfLoader = new GLTFLoader();
+const fbxLoader  = new FBXLoader();
+
+const bgInput     = document.getElementById('bg-color');
+const sizeSelect  = document.getElementById('render-size');
+const btnRender   = document.getElementById('btn-render');
+const btnDownload = document.getElementById('btn-download');
+const gridEl      = document.getElementById('grid');
+const progressFill = document.getElementById('progress-fill');
+const progressLabel = document.getElementById('progress-label');
+const offscreen   = document.getElementById('offscreen');
+
+let allModels = [];
+let renderedCards = [];
+
+function modelUrl(relPath) {
+  return '/models/' + relPath.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
+}
+
+function fixMaterials(object) {
+  object.traverse(child => {
+    if (!child.isMesh) return;
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach(m => {
+      if (m.map)         m.map.colorSpace         = THREE.SRGBColorSpace;
+      if (m.emissiveMap) m.emissiveMap.colorSpace  = THREE.SRGBColorSpace;
+      ['normalMap','roughnessMap','metalnessMap','aoMap','displacementMap'].forEach(k => {
+        if (m[k]) m[k].colorSpace = THREE.LinearSRGBColorSpace;
+      });
+      if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+        if (!m.metalnessMap) m.metalness = 0;
+        if (!m.roughnessMap && m.roughness < 0.3) m.roughness = 0.7;
+      }
+      m.side = THREE.DoubleSide;
+      if (m.transparent && m.alphaMap) {
+        m.alphaTest = Math.max(m.alphaTest, 0.05);
+        m.depthWrite = true;
+      }
+      m.needsUpdate = true;
+    });
+  });
+}
+
+function pickAnimation(anims, object) {
+  if (!anims.length) return;
+  const mixer = new THREE.AnimationMixer(object);
+  const preferred = anims.findIndex(c =>
+    /idle|stand|default|pose|t.?pose/i.test(c.name));
+  const avoid = anims.findIndex(c =>
+    /sleep|rest|sit|lie|lay|dead|faint/i.test(c.name));
+  const pick = preferred >= 0 ? preferred
+             : (avoid === 0 && anims.length > 1 ? 1 : 0);
+  const action = mixer.clipAction(anims[pick]);
+  action.play();
+  mixer.update(0);
+  mixer.update(0.01);
+}
+
+function renderModel(object, bgColor, size) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
+  renderer.setPixelRatio(1);
+  renderer.setSize(size, size);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(bgColor);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  dirLight.position.set(3, 6, 4);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(1024, 1024);
+  scene.add(dirLight);
+  const fillLight = new THREE.DirectionalLight(0xb0c8ff, 0.8);
+  fillLight.position.set(-4, 2, -3);
+  scene.add(fillLight);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x888899, 0.6));
+
+  fixMaterials(object);
+
+  const box = new THREE.Box3().setFromObject(object);
+  const boxSize = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+
+  object.position.y -= box.min.y;
+  center.y -= box.min.y;
+
+  scene.add(object);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+  const maxDim = Math.max(boxSize.x, boxSize.y, boxSize.z);
+  const fov = camera.fov * (Math.PI / 180);
+  let dist = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+  dist = Math.max(dist, 0.5);
+
+  camera.position.set(
+    center.x + dist * 0.3,
+    center.y + boxSize.y * 0.35,
+    center.z + dist
+  );
+  camera.lookAt(center.x, center.y + boxSize.y * 0.25, center.z);
+
+  renderer.render(scene, camera);
+  const dataUrl = renderer.domElement.toDataURL('image/png');
+
+  object.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) [].concat(o.material).forEach(m => {
+      if (m.map) m.map.dispose();
+      if (m.normalMap) m.normalMap.dispose();
+      if (m.emissiveMap) m.emissiveMap.dispose();
+      if (m.roughnessMap) m.roughnessMap.dispose();
+      if (m.metalnessMap) m.metalnessMap.dispose();
+      if (m.aoMap) m.aoMap.dispose();
+      m.dispose();
+    });
+  });
+  renderer.dispose();
+
+  return dataUrl;
+}
+
+function loadModelAsync(url, name) {
+  return new Promise((resolve, reject) => {
+    const ext = name.split('.').pop().toLowerCase();
+    if (ext === 'glb' || ext === 'gltf') {
+      gltfLoader.load(url,
+        gltf => resolve({ object: gltf.scene, animations: gltf.animations }),
+        undefined, reject);
+    } else if (ext === 'fbx') {
+      fbxLoader.load(url,
+        fbx => resolve({ object: fbx, animations: fbx.animations || [] }),
+        undefined, reject);
+    } else {
+      reject(new Error(`Unsupported: .${ext}`));
+    }
+  });
+}
+
+async function renderAll() {
+  const size = parseInt(sizeSelect.value);
+  const bgColor = bgInput.value;
+  document.documentElement.style.setProperty('--render-bg', bgColor);
+
+  gridEl.innerHTML = '';
+  renderedCards = [];
+  btnRender.disabled = true;
+  btnDownload.disabled = true;
+
+  for (let i = 0; i < allModels.length; i++) {
+    const model = allModels[i];
+    const pct = ((i + 1) / allModels.length * 100).toFixed(0);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `${i + 1} / ${allModels.length} — ${model.name}`;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    try {
+      const url = modelUrl(model.relativePath);
+      const { object, animations } = await loadModelAsync(url, model.name);
+      pickAnimation(animations, object);
+      const dataUrl = renderModel(object, bgColor, size);
+
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = model.name;
+      card.appendChild(img);
+
+      renderedCards.push({ name: model.name, folder: model.folder, dataUrl });
+    } catch (err) {
+      card.classList.add('error');
+      const errDiv = document.createElement('div');
+      errDiv.className = 'err-msg';
+      errDiv.textContent = `Failed to load: ${err.message || err}`;
+      card.appendChild(errDiv);
+    }
+
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.textContent = `#${i + 1}`;
+    card.appendChild(badge);
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    const nameSpan = document.createTextNode(model.name.replace(/\.[^.]+$/, ''));
+    label.appendChild(nameSpan);
+    if (model.folder) {
+      const folderSpan = document.createElement('span');
+      folderSpan.className = 'folder';
+      folderSpan.textContent = model.folder;
+      label.appendChild(folderSpan);
+    }
+    card.appendChild(label);
+
+    gridEl.appendChild(card);
+
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  progressLabel.textContent = `Done — ${renderedCards.length} models rendered`;
+  btnRender.disabled = false;
+  btnDownload.disabled = renderedCards.length === 0;
+}
+
+function downloadSheet() {
+  if (!renderedCards.length) return;
+
+  const cols = Math.ceil(Math.sqrt(renderedCards.length));
+  const rows = Math.ceil(renderedCards.length / cols);
+  const thumbSize = parseInt(sizeSelect.value);
+  const labelH = 30;
+  const cellW = thumbSize;
+  const cellH = thumbSize + labelH;
+  const pad = 8;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = cols * (cellW + pad) + pad;
+  canvas.height = rows * (cellH + pad) + pad + 40;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = bgInput.value;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#222';
+  ctx.font = 'bold 18px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Bluey Contact Sheet', canvas.width / 2, 28);
+
+  const images = renderedCards.map(c => {
+    const img = new Image();
+    img.src = c.dataUrl;
+    return img;
+  });
+
+  Promise.all(images.map(img => img.decode ? img.decode().then(() => img) : Promise.resolve(img)))
+    .then(loadedImages => {
+      loadedImages.forEach((img, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = pad + col * (cellW + pad);
+        const y = 40 + pad + row * (cellH + pad);
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, y, cellW, cellH);
+        ctx.strokeStyle = '#ccc';
+        ctx.strokeRect(x, y, cellW, cellH);
+
+        ctx.drawImage(img, x, y, thumbSize, thumbSize);
+
+        ctx.fillStyle = '#333';
+        ctx.font = '11px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        const name = renderedCards[i].name.replace(/\.[^.]+$/, '');
+        ctx.fillText(name, x + cellW / 2, y + thumbSize + 18, cellW - 8);
+      });
+
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'bluey-contact-sheet.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }, 'image/png');
+    });
+}
+
+async function init() {
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+
+    if (!data.folders || !data.folders.length) {
+      document.getElementById('no-models').style.display = 'block';
+      btnRender.disabled = true;
+      return;
+    }
+
+    allModels = [];
+    for (const folder of data.folders) {
+      for (const model of folder.models) {
+        allModels.push({ ...model, folder: folder.name });
+      }
+    }
+
+    progressLabel.textContent = `${allModels.length} models found — click Render All`;
+  } catch {
+    document.getElementById('no-models').style.display = 'block';
+    btnRender.disabled = true;
+  }
+}
+
+btnRender.addEventListener('click', renderAll);
+btnDownload.addEventListener('click', downloadSheet);
+bgInput.addEventListener('input', () => {
+  document.documentElement.style.setProperty('--render-bg', bgInput.value);
+});
+
+init();
+</script>
+</body>
+</html>
