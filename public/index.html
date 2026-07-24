@@ -1,35 +1,479 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terrain Trees</title>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, sans-serif;
-      background: #0f1a14;
-      color: #e6f2ea;
-    }
-    .card {
-      text-align: center;
-      padding: 2rem 3rem;
-      border: 1px solid #24503a;
-      border-radius: 12px;
-      background: #142a1f;
-    }
-    h1 { margin: 0 0 .5rem; }
-    code { background: #0b1710; padding: .15em .4em; border-radius: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SimpleNotes</title>
+<style>
+:root {
+  --bg: #E8E1D9;
+  --surface: #FFF9ED;
+  --note-shadow: rgba(60, 50, 40, 0.12);
+  --text: #2C2C2C;
+  --text-dim: #6B6560;
+  --accent: #5B8A72;
+  --accent-hover: #4A7A62;
+  --danger: #C4727F;
+  --danger-hover: #B0616D;
+  --input-bg: #FFFDF7;
+  --input-border: #D5CFC7;
+  --bar-bg: rgba(255, 253, 247, 0.92);
+  --bar-border: #D5CFC7;
+  --pin: #C4727F;
+  --note-colors: #FFF9ED, #FDEBD3, #E4F0E8, #E3EAF5, #F5E6F0, #FFF3D6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1A1A1E;
+    --surface: #2A2A30;
+    --note-shadow: rgba(0, 0, 0, 0.35);
+    --text: #E8E4DF;
+    --text-dim: #8A8580;
+    --accent: #7AAE94;
+    --accent-hover: #8DC0A5;
+    --danger: #D4848F;
+    --danger-hover: #E09AA4;
+    --input-bg: #2A2A30;
+    --input-border: #3E3E44;
+    --bar-bg: rgba(42, 42, 48, 0.94);
+    --bar-border: #3E3E44;
+    --pin: #D4848F;
+    --note-colors: #2E2D28, #302A24, #242E28, #242830, #2C2530, #302C22;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1A1A1E;
+  --surface: #2A2A30;
+  --note-shadow: rgba(0, 0, 0, 0.35);
+  --text: #E8E4DF;
+  --text-dim: #8A8580;
+  --accent: #7AAE94;
+  --accent-hover: #8DC0A5;
+  --danger: #D4848F;
+  --danger-hover: #E09AA4;
+  --input-bg: #2A2A30;
+  --input-border: #3E3E44;
+  --bar-bg: rgba(42, 42, 48, 0.94);
+  --bar-border: #3E3E44;
+  --pin: #D4848F;
+  --note-colors: #2E2D28, #302A24, #242E28, #242830, #2C2530, #302C22;
+}
+:root[data-theme="light"] {
+  --bg: #E8E1D9;
+  --surface: #FFF9ED;
+  --note-shadow: rgba(60, 50, 40, 0.12);
+  --text: #2C2C2C;
+  --text-dim: #6B6560;
+  --accent: #5B8A72;
+  --accent-hover: #4A7A62;
+  --danger: #C4727F;
+  --danger-hover: #B0616D;
+  --input-bg: #FFFDF7;
+  --input-border: #D5CFC7;
+  --bar-bg: rgba(255, 253, 247, 0.92);
+  --bar-border: #D5CFC7;
+  --pin: #C4727F;
+  --note-colors: #FFF9ED, #FDEBD3, #E4F0E8, #E3EAF5, #F5E6F0, #FFF3D6;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { background: var(--bg); }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+  transition: background 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 8px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Fira Code', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.note-count {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.board {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 140px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .board {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    padding: 12px 14px 140px;
+  }
+}
+
+.note {
+  position: relative;
+  padding: 28px 16px 14px;
+  border-radius: 2px;
+  box-shadow: 1px 2px 8px var(--note-shadow), 0 1px 2px var(--note-shadow);
+  cursor: default;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  word-break: break-word;
+  min-height: 100px;
+}
+
+.note:hover {
+  transform: scale(1.02) rotate(0deg) !important;
+  box-shadow: 2px 4px 16px var(--note-shadow), 0 2px 4px var(--note-shadow);
+  z-index: 2;
+}
+
+.note::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pin);
+  opacity: 0.55;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.note-title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.35;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.note-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+}
+
+.note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+:root[data-theme="dark"] .note-meta,
+@media (prefers-color-scheme: dark) {
+  .note-meta { border-top-color: rgba(255,255,255,0.06); }
+}
+:root[data-theme="light"] .note-meta { border-top-color: rgba(0,0,0,0.06); }
+
+.note-date {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.note-del {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.note:hover .note-del { opacity: 1; }
+.note-del:hover { background: rgba(196, 114, 127, 0.12); }
+.note-del:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--danger);
+  outline-offset: 1px;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-dim);
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.25;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.empty-text {
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+.input-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--bar-border);
+  padding: 14px 20px max(14px, env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+.input-bar-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-title {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-title:focus { border-color: var(--accent); }
+
+.input-title::placeholder,
+.input-body::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+.input-body {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  resize: none;
+  min-height: 38px;
+  max-height: 120px;
+  line-height: 1.45;
+  transition: border-color 0.15s;
+  field-sizing: content;
+}
+
+.input-body:focus { border-color: var(--accent); }
+
+.btn-add {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.btn-add:hover { background: var(--accent-hover); }
+.btn-add:active { transform: scale(0.97); }
+.btn-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .note, .btn-add { transition: none; }
+  .note:hover { transform: none !important; }
+}
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>🌲 Terrain Trees</h1>
-    <p>Live-reload server is running.</p>
-    <p>Edit <code>public/index.html</code> and this page refreshes on save.</p>
+
+<div class="header">
+  <div class="logo">SimpleNotes</div>
+  <div class="note-count" id="count"></div>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="input-bar">
+  <div class="input-bar-inner">
+    <div class="input-group">
+      <input type="text" class="input-title" id="titleInput" placeholder="Title (optional)" autocomplete="off" maxlength="120">
+      <textarea class="input-body" id="bodyInput" placeholder="Write a note..." rows="1"></textarea>
+    </div>
+    <button class="btn-add" id="addBtn">Pin it</button>
   </div>
+</div>
+
+<script>
+const COLORS_LIGHT = ['#FFF9ED','#FDEBD3','#E4F0E8','#E3EAF5','#F5E6F0','#FFF3D6'];
+const COLORS_DARK  = ['#2E2D28','#302A24','#242E28','#242830','#2C2530','#302C22'];
+const ROTATIONS = [-2.2, 1.1, -0.8, 1.8, -1.5, 0.6, -1.9, 2.1, 0.3, -0.5];
+
+function isDark() {
+  const dt = document.documentElement.getAttribute('data-theme');
+  if (dt === 'dark') return true;
+  if (dt === 'light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function getColor(i) {
+  const palette = isDark() ? COLORS_DARK : COLORS_LIGHT;
+  return palette[i % palette.length];
+}
+
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem('simplenotes') || '[]'); }
+  catch { return []; }
+}
+
+function saveNotes(notes) {
+  localStorage.setItem('simplenotes', JSON.stringify(notes));
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const mon = d.toLocaleString('en', { month: 'short' }).toUpperCase();
+  const day = d.getDate();
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${mon} ${day}, ${h12}:${m} ${ampm}`;
+}
+
+function render() {
+  const notes = loadNotes();
+  const board = document.getElementById('board');
+  const count = document.getElementById('count');
+  count.textContent = notes.length ? `${notes.length} note${notes.length > 1 ? 's' : ''}` : '';
+
+  if (!notes.length) {
+    board.innerHTML = `<div class="empty">
+      <span class="empty-icon">&#128204;</span>
+      <div class="empty-text">No notes yet. Write something below.</div>
+    </div>`;
+    return;
+  }
+
+  board.innerHTML = notes.map((n, i) => {
+    const rot = ROTATIONS[i % ROTATIONS.length];
+    const bg = getColor(n.colorIdx ?? i);
+    const title = n.title ? `<div class="note-title">${esc(n.title)}</div>` : '';
+    return `<div class="note" style="background:${bg};transform:rotate(${rot}deg)" data-id="${n.id}">
+      ${title}
+      <div class="note-body">${esc(n.body)}</div>
+      <div class="note-meta">
+        <span class="note-date">${formatDate(n.ts)}</span>
+        <button class="note-del" onclick="del(${n.id})" aria-label="Delete note">DEL</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function add() {
+  const titleEl = document.getElementById('titleInput');
+  const bodyEl = document.getElementById('bodyInput');
+  const title = titleEl.value.trim();
+  const body = bodyEl.value.trim();
+  if (!body && !title) return;
+
+  const notes = loadNotes();
+  notes.unshift({
+    id: Date.now(),
+    title,
+    body: body || '',
+    ts: Date.now(),
+    colorIdx: Math.floor(Math.random() * COLORS_LIGHT.length)
+  });
+  saveNotes(notes);
+  titleEl.value = '';
+  bodyEl.value = '';
+  bodyEl.style.height = '';
+  render();
+}
+
+window.del = function(id) {
+  const notes = loadNotes().filter(n => n.id !== id);
+  saveNotes(notes);
+  render();
+};
+
+document.getElementById('addBtn').addEventListener('click', add);
+
+document.getElementById('bodyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); add(); }
+});
+document.getElementById('titleInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('bodyInput').focus(); }
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+render();
+</script>
 </body>
 </html>
